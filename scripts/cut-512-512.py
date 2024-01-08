@@ -20,7 +20,7 @@ def crop_images(source_directory, target_directory):
                     right_crop.save(os.path.join(target_directory, filename.replace('.', 'R.')))
 
 # Usage
-source_directory = '/Users/bengisu/Downloads/deneme'
-target_directory = '/Users/bengisu/Downloads/deneme512'
+source_directory = '/its/home/bk277/welshdata/images-630-720'
+target_directory = '/its/home/bk277/welshdata/images-512'
 crop_images(source_directory, target_directory)
 
