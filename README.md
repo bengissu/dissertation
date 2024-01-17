@@ -1,9 +1,6 @@
 ## Super-Resolution in MRI: Reducing Artifacts and Enhancing Efficiency
 
-
-
-This repository is the coding part of my MSc Data Science dissertation at University of Sussex. You can find the dissertation: 
-
+This repository is the coding part of my MSc Data Science dissertation at University of Sussex. You can find the dissertation: https://drive.google.com/drive/folders/1XCWqYjvUyAiDpuXU-2NXA10gUmGJfiwh?usp=sharing
 # Abstract:
 Objective and Methodology
 This dissertation investigates the application of super-resolution (SR) techniques in Magnetic Resonance Imaging (MRI) for speech production studies aiming to address MRI challenges like artifacts and resolution trade-offs. The methodology involved simulating various MRI artifacts in low-resolution images for the evaluation of SR techniques.
