@@ -6,18 +6,17 @@ import random
 import logging
 
 
-def reduce_snr(img, noise_level=15):
+def reduce_snr(img, noise_level=30):
     """
     Reduces the signal-to-noise ratio of a color MRI image using OpenCV.
 
     Args:
-    - image (numpy.ndarray): The original image.
+    - image_path (str): Path to the MRI image file (PNG format).
     - noise_level (int): Level of Gaussian noise to add.
 
     Returns:
     - ndarray: The MRI image array with reduced SNR.
     """
-
 
     # Generate Gaussian noise for each color channel
     noise = np.random.normal(0, noise_level, img.shape)
@@ -154,33 +153,6 @@ def add_gibbs_artifacts(image):
 
 
 
-def blur_area_of_image(image, area):
-    """
-    Apply a blur effect to a specified area of an image.
-
-    Parameters:
-    image (numpy.ndarray): The original image.
-    area (tuple): A tuple of (x, y, width, height) specifying the area to blur.
-
-    Returns:
-    numpy.ndarray: The image with the specified area blurred.
-    """
-    x, y, width, height = area
-
-    # Ensure the area is within the image boundaries
-    x, y, width, height = max(0, x), max(0, y), min(width, image.shape[1] - x), min(height, image.shape[0] - y)
-
-    # Extract the region of interest (ROI)
-    roi = image[y:y+height, x:x+width]
-
-    # Apply blur to the ROI
-    blurred_roi = cv2.GaussianBlur(roi, (15, 15), 0)
-
-    # Replace the original area with the blurred ROI
-    image[y:y+height, x:x+width] = blurred_roi
-
-    return image
-
 
 def process_directory(source_directory, target_directory):
     """
@@ -197,17 +169,30 @@ def process_directory(source_directory, target_directory):
 
             if image is not None and image.shape[0] == 512 and image.shape[1] == 512:
                 # Define the area for the artifact based on file name
-                random_area = random.randint(64, 256)
+                random_area = random.randint(150, 512)
                 area = (512 - random_area, 512 - random_area, random_area, random_area)
 
-
-                image = add_susceptibility_artifact(image, area)
-                image = add_motion_artifact(image, area)
-                image = add_ghosting_artifact(image)
-                image = add_gibbs_artifacts(image)
-                image = blur_area_of_image(image, area)
-                image = reduce_snr(image)
-
+                # Apply artifacts
+                random_artifact = random.randint(1, 6)
+                artifact_name = ""
+                if random_artifact == 1:
+                    image = add_susceptibility_artifact(image, area)
+                    artifact_name = "susceptibility"
+                elif random_artifact == 2:
+                    image = add_motion_artifact(image, area)
+                    artifact_name = "motion"
+                elif random_artifact == 3:
+                    image = add_ghosting_artifact(image)
+                    artifact_name = "ghosting"
+                elif random_artifact == 4:
+                    image = add_gibbs_artifacts(image)
+                    artifact_name = "Gibbs"
+                elif random_artifact == 5:
+                    image = reduce_snr(image)
+                    artifact_name="low-SNR"
+                else:
+                    artifact_name = "NO"
+                    pass
                 
                 # Make 1/4 resolution
                 processed_image = reduce_spatial_resolution(image)
@@ -215,6 +200,9 @@ def process_directory(source_directory, target_directory):
                 # Save the processed image
                 save_path = os.path.join(target_directory, filename)
                 cv2.imwrite(save_path, processed_image)
+
+                # Log the action
+                logging.info(f"Processed {filename} with {artifact_name} artifact")
 
                 print(f"Processed and saved: {filename}")
             else:
@@ -226,10 +214,81 @@ def process_directory(source_directory, target_directory):
 def main():
     # Argument parsing with named arguments
     parser = argparse.ArgumentParser(description='Process images')
-    parser.add_argument('--path_hq', type=str, required=True, help='Path to the target directory containing high-quality images.')
-    parser.add_argument('--path_lq', type=str, required=True, help='Path to the source directory to save low-quality images.')
+    parser.add_argument('--path_lq', type=str, required=True, help='Path to the target directory containing high-quality images.')
+    parser.add_argument('--path_hq', type=str, required=True, help='Path to the source directory to save low-quality images.')
+    parser.add_argument('--path_log', default='artifacts.log', type=str, required=True, help='Path and name of the log file.')
 
     args = parser.parse_args()
+
+    # Set up logging
+def process_directory(source_directory, target_directory):
+    """
+    Process all images in the source directory, apply a random combination of 
+    artifacts, and save them in the target directory. Log each action.
+    """
+    if not os.path.exists(target_directory):
+        os.makedirs(target_directory)
+
+    for filename in os.listdir(source_directory):
+        if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
+            img_path = os.path.join(source_directory, filename)
+            image = cv2.imread(img_path)
+
+            if image is not None and image.shape[0] == 512 and image.shape[1] == 512:
+                # Define the area for the artifact based on file name
+                random_area = random.randint(150, 512)
+                area = (512 - random_area, 512 - random_area, random_area, random_area)
+
+                # Apply artifacts
+                random_artifact = random.randint(1, 6)
+                artifact_name = ""
+                if random_artifact == 1:
+                    image = add_susceptibility_artifact(image, area)
+                    artifact_name = "susceptibility"
+                elif random_artifact == 2:
+                    image = add_motion_artifact(image, area)
+                    artifact_name = "motion"
+                elif random_artifact == 3:
+                    image = add_ghosting_artifact(image)
+                    artifact_name = "ghosting"
+                elif random_artifact == 4:
+                    image = add_gibbs_artifacts(image)
+                    artifact_name = "Gibbs"
+                elif random_artifact == 5:
+                    image = reduce_snr(image)
+                    artifact_name="low-SNR"
+                else:
+                    artifact_name = "NO"
+                    pass
+                
+                # Make 1/4 resolution
+                processed_image = reduce_spatial_resolution(image)
+                
+                # Save the processed image
+                save_path = os.path.join(target_directory, filename)
+                cv2.imwrite(save_path, processed_image)
+
+                # Log the action
+                logging.info(f"Processed {filename} with {artifact_name} artifact, random area: {random_area}")
+
+                print(f"Processed and saved: {filename}")
+            else:
+                logging.warning(f"Skipped or failed to read: {filename}")
+                print(f"Skipped or failed to read: {filename}")
+
+
+
+def main():
+    # Argument parsing with named arguments
+    parser = argparse.ArgumentParser(description='Process images')
+    parser.add_argument('--path_hq', type=str, required=True, help='Path to the source directory containing high-quality images.')
+    parser.add_argument('--path_lq', type=str, required=True, help='Path to the target directory to save low-quality images.')
+    parser.add_argument('--path_log', default='artifacts.log', type=str, required=False, help='Path and name of the log file.')
+
+    args = parser.parse_args()
+
+    # Set up logging
+    logging.basicConfig(filename=args.path_log, level=logging.INFO, format='%(asctime)s - %(message)s')
 
     # Process images in the specified directory
     process_directory(args.path_hq, args.path_lq)
@@ -237,3 +296,6 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+
